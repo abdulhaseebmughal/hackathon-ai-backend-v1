@@ -13,11 +13,15 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Default Route
 app.get('/', (req, res) => {
-    res.send('AI Clinic Management API is running...');
+    res.json({ message: 'AI Clinic Management API is running...', status: 'ok' });
 });
 
 // Import Routes
@@ -39,12 +43,17 @@ app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Global Error Handler Middleware (imported)
+// Global Error Handler Middleware
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+// Only start listening when running locally (Vercel handles its own listening)
+if (process.env.VERCEL !== '1') {
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Export for Vercel serverless functions
+module.exports = app;
