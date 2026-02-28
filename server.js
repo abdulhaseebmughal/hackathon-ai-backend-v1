@@ -6,9 +6,6 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 const app = express();
 
 // Middleware
@@ -18,6 +15,17 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+// Connect to DB lazily on first request (better for serverless cold starts)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('[server] DB connection error:', err.message);
+        res.status(503).json({ message: 'Database unavailable. Check MONGO_URI environment variable on Vercel.' });
+    }
+});
 
 // Default Route
 app.get('/', (req, res) => {
@@ -47,7 +55,7 @@ app.use('/api/admin', adminRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-// Only start listening when running locally (Vercel handles its own listening)
+// Only start listening locally (Vercel handles its own server)
 if (process.env.VERCEL !== '1') {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
@@ -55,5 +63,5 @@ if (process.env.VERCEL !== '1') {
     });
 }
 
-// Export for Vercel serverless functions
+// Export for Vercel serverless
 module.exports = app;

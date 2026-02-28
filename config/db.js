@@ -1,15 +1,26 @@
 const mongoose = require('mongoose');
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+
+let isConnected = false;
 
 const connectDB = async () => {
+  if (isConnected) return; // Reuse connection across serverless invocations
+
+  if (!process.env.MONGO_URI) {
+    console.error('[DB] MONGO_URI is not set. Check Vercel environment variables.');
+    return;
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, { family: 4 });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+    });
+    isConnected = true;
+    console.log(`[DB] MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1);
+    console.error(`[DB] Connection failed: ${error.message}`);
+    // Do NOT call process.exit(1) — it would crash the Vercel function
+    throw error;
   }
 };
 

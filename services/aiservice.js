@@ -21,7 +21,7 @@ const MODELS = {
  * @param {number} options.maxTokens      - Max tokens (default 1500)
  */
 const callAI = async ({ systemPrompt, userMessage, model = 'quality', expectJson = false, maxTokens = 1500 }) => {
-    const apiKey = process.env.GROQ_API_KEY || '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';
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey || apiKey.startsWith('your_')) {
         console.warn('[AI-CLIENT] API key missing or placeholder. Returning fallback.');
